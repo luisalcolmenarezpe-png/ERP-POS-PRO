@@ -20,14 +20,15 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Set up Flutter SDK
+      - Dependencies: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
           cache: true
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Generar plataformas nativas
+        run: flutter create . --platforms=android,windows
+        
 
       - name: Build Release APK
         run: flutter build apk --release --split-per-abi
