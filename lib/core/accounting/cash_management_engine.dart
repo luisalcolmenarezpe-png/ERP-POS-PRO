@@ -1,0 +1,109 @@
+// lib/core/accounting/cash_management_engine.dart
+
+enum CashRegisterType { mainVault, pettyCash } // Bóveda vs Caja Chica
+
+class CashMovement {
+  final String id;
+  final String registerId;
+  final String userId;
+  final double amountVes;
+  final double amountUsd;
+  final String concept; // Ej: "Pago de flete", "Retiro a Bóveda", "Fondo Inicial"
+  final bool isIncome;  // true = Ingreso, false = Egreso
+  final DateTime timestamp;
+
+  CashMovement({
+    required this.id,
+    required this.registerId,
+    required this.userId,
+    required this.amountVes,
+    required this.amountUsd,
+    required this.concept,
+    required this.isIncome,
+    required this.timestamp,
+  });
+}
+
+class CashSession {
+  final String sessionId;
+  final String registerId;
+  final String cashierUserId;
+  final double openingBalanceVes;
+  final double openingBalanceUsd;
+  double currentBalanceVes;
+  double currentBalanceUsd;
+  final DateTime openedAt;
+  DateTime? closedAt;
+  bool isOpen;
+
+  CashSession({
+    required this.sessionId,
+    required this.registerId,
+    required this.cashierUserId,
+    required this.openingBalanceVes,
+    required this.openingBalanceUsd,
+    required this.currentBalanceVes,
+    required this.currentBalanceUsd,
+    required this.openedAt,
+    this.isOpen = true,
+  });
+}
+
+class CashManagementEngine {
+  /// Registra un movimiento en Caja Chica (Gastos menores o reabastecimiento)
+  static CashSession processPettyExpense({
+    required CashSession session,
+    required double amountVes,
+    required double amountUsd,
+    required String concept,
+    required String userId,
+  }) {
+    if (!session.isOpen) throw Exception('La caja está cerrada');
+
+    session.currentBalanceVes -= amountVes;
+    session.currentBalanceUsd -= amountUsd;
+
+    return session;
+  }
+
+  /// Transferencia / Relevo de efectivo de Caja Chica a Caja Principal (Bóveda)
+  static Map<String, double> transferToVault({
+    required CashSession pettySession,
+    required double transferVes,
+    required double transferUsd,
+  }) {
+    if (pettySession.currentBalanceVes < transferVes || pettySession.currentBalanceUsd < transferUsd) {
+      throw Exception('Fondos insuficientes en Caja Chica para realizar la transferencia a Bóveda');
+    }
+
+    pettySession.currentBalanceVes -= transferVes;
+    pettySession.currentBalanceUsd -= transferUsd;
+
+    return {
+      'vault_received_ves': transferVes,
+      'vault_received_usd': transferUsd,
+      'remaining_petty_ves': pettySession.currentBalanceVes,
+      'remaining_petty_usd': pettySession.currentBalanceUsd,
+    };
+  }
+
+  /// Realiza el Arqueo de Caja y calcula descuadres (Sobrantes o Faltantes)
+  static Map<String, dynamic> performCashAudit({
+    required CashSession session,
+    required double physicalCountVes,
+    required double physicalCountUsd,
+  }) {
+    final differenceVes = physicalCountVes - session.currentBalanceVes;
+    final differenceUsd = physicalCountUsd - session.currentBalanceUsd;
+
+    return {
+      'expected_ves': session.currentBalanceVes,
+      'counted_ves': physicalCountVes,
+      'difference_ves': differenceVes, // Positivo = Sobrante, Negativo = Faltante
+      'expected_usd': session.currentBalanceUsd,
+      'counted_usd': physicalCountUsd,
+      'difference_usd': differenceUsd,
+      'is_balanced': (differenceVes.abs() < 0.01 && differenceUsd.abs() < 0.01),
+    };
+  }
+}
