@@ -1,4 +1,4 @@
-name: Flutter Multiplatform Release Build
+ Flutter Multiplatform Release Build
 
 on:
   push:
