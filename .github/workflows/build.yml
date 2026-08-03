@@ -1,9 +1,9 @@
 Multiplatform Release Build
 
 on: Build Apps
-  push: [push, workflow_dispatch]
-    branches: [ main, master ]
-  pull_request:
+push: [push, workflow_dispatch]
+branches: [ main, master ]
+pull_request:
     branches: [ main, master ]
 
 jobs:
@@ -71,4 +71,5 @@ jobs:
         with:
           name: windows-release-app
           path: build/windows/runner/Release
+
           
