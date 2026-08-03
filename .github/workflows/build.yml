@@ -1,4 +1,4 @@
- Multiplatform Release Build
+Multiplatform Release Build
 
 on:
   push:
@@ -71,3 +71,4 @@ jobs:
         with:
           name: windows-release-app
           path: build/windows/runner/Release
+          
