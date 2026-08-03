@@ -1,11 +1,6 @@
-Multiplatform Release Build
-
-on: Build Apps
-push: [push, workflow_dispatch]
-branches: [ main, master ]
-pull_request:
-    branches: [ main, master ]
-
+name: Build Apps
+on: [push, workflow_dispatch]
+    
 jobs:
   build-android:
     name: Build Android APK
