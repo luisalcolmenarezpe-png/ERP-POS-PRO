@@ -1,6 +1,6 @@
 Multiplatform Release Build
 
-on:
+on: Build Apps
   push:
     branches: [ main, master ]
   pull_request:
