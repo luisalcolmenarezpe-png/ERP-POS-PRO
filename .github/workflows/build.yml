@@ -1,1 +1,91 @@
+name: Build Apps
+on: [push, workflow_dispatch]
 
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Parche Inteligente de Namespace (Python)
+        run: |
+          python3 -c "
+          import os, glob
+          found = False
+          for root, dirs, files in os.walk('/home/runner'):
+              if 'blue_thermal_printer' in root and 'android' in root:
+                  gradle_path = os.path.join(root, 'build.gradle')
+                  if os.path.exists(gradle_path):
+                      with open(gradle_path, 'r') as f:
+                          content = f.read()
+                      if 'namespace' not in content:
+                          content = content.replace('android {', 'android {\n    namespace \"com.blue.thermal.printer\"')
+                          with open(gradle_path, 'w') as f:
+                              f.write(content)
+                          print(f'¡PARCHE APLICADO EXITOSAMENTE A: {gradle_path}')
+                          found = True
+                      else:
+                          print(f'Ya tiene namespace: {gradle_path}')
+                          found = True
+          if not found:
+              for f in glob.glob('**/blue_thermal_printer**/android/build.gradle', recursive=True):
+                  with open(f, 'r') as file:
+                      content = file.read()
+                  if 'namespace' not in content:
+                      content = content.replace('android {', 'android {\n    namespace \"com.blue.thermal.printer\"')
+                      with open(f, 'w') as file:
+                          file.write(content)
+                      print(f'¡Parche aplicado por glob a: {f}')
+          "
+
+      - name: Build Release APK
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-apk
+          path: build/app/outputs/flutter-apk/*.apk
+
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Enable Windows Desktop Support
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Windows Release
+        run: flutter build windows --release
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release-app
+          path: build/windows/x64/runner/Release
