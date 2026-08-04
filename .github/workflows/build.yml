@@ -1,6 +1,6 @@
 name: Build Apps
 on: [push, workflow_dispatch]
-    
+
 jobs:
   build-android:
     name: Build Android APK
@@ -19,13 +19,25 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
-
-      - name: Generar plataformas nativas Android
-        run: flutter create --platforms=android .
 
       - name: Install Dependencies
         run: flutter pub get
+
+      - name: Forzar Namespace en Blue Thermal Printer
+        run: |
+          python3 -c "
+          import glob, os
+          for f in glob.glob('/home/runner/.pub-cache/hosted/pub.dev/blue_thermal_printer-*/android/build.gradle'):
+              with open(f, 'r') as file:
+                  content = file.read()
+              if 'namespace' not in content:
+                  content = content.replace('android {', 'android {\n    namespace \"com.blue.thermal.printer\"')
+                  with open(f, 'w') as file:
+                      file.write(content)
+                  print('¡PARCHE APLICADO EXITOSAMENTE A:', f)
+              else:
+                  print('Ya tiene namespace:', f)
+          "
 
       - name: Build Release APK
         run: flutter build apk --release --split-per-abi
@@ -47,16 +59,12 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          cache: true
-
-      - name: Generar plataformas nativas Windows
-        run: flutter create --platforms=windows .
-
-      - name: Install Dependencies
-        run: flutter pub get
 
       - name: Enable Windows Desktop Support
         run: flutter config --enable-windows-desktop
+
+      - name: Install Dependencies
+        run: flutter pub get
 
       - name: Build Windows Release
         run: flutter build windows --release
@@ -65,9 +73,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-release-app
-          path: build/windows/runner/Release
-
-
+          path: build/windows/x64/runner/Release
           
-
-
