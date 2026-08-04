@@ -20,8 +20,10 @@ jobs:
         with:
           channel: 'stable'
 
-      - name: Install Dependencies
-        run: flutter pub get
+      - name: Generar plataformas nativas si faltan y dependencias
+        run: |
+          flutter create . --platforms=android,windows
+          flutter pub get
 
       - name: Parche Inteligente de Namespace (Python)
         run: |
@@ -89,3 +91,4 @@ jobs:
         with:
           name: windows-release-app
           path: build/windows/x64/runner/Release
+          
