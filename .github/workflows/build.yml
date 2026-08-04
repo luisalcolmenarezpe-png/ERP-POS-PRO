@@ -9,6 +9,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Limpiar carpetas basura o duplicadas
+        run: |
+          rm -rf ERP-POS-PRD
+          pwd
+          ls -la
+
       - name: Set up Java JDK
         uses: actions/setup-java@v4
         with:
