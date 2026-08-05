@@ -9,6 +9,9 @@ jobs:
   build-android:
     name: Construir APK de Android
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ERP-POS-PRO
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -27,32 +30,6 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
-      - name: Parche Quirúrgico de Paquetes (Python)
-        run: |
-          python3 -c "
-          import glob
-
-          # 1. Parchar namespace en blue_thermal_printer dentro del pub-cache
-          for f in glob.glob('/home/runner/.pub-cache/hosted/pub.dev/blue_thermal_printer-*/android/build.gradle'):
-              with open(f, 'r') as file:
-                  content = file.read()
-              if 'namespace' not in content:
-                  content = content.replace('android {', 'android {\n    namespace \"com.blue.thermal.printer\"')
-                  with open(f, 'w') as file:
-                      file.write(content)
-                  print('Namespace aplicado a:', f)
-
-          # 2. Reemplazar jcenter() por mavenCentral() en todo el pub-cache
-          for f in glob.glob('/home/runner/.pub-cache/hosted/pub.dev/**/android/build.gradle', recursive=True):
-              with open(f, 'r') as file:
-                  content = file.read()
-              if 'jcenter()' in content:
-                  content = content.replace('jcenter()', 'mavenCentral()')
-                  with open(f, 'w') as file:
-                      file.write(content)
-                  print('jcenter reemplazado en:', f)
-          "
-
       - name: Build Release APK
         run: flutter build apk --release --split-per-abi
 
@@ -60,11 +37,14 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
-          path: build/app/outputs/flutter-apk/*.apk
+          path: ERP-POS-PRO/build/app/outputs/flutter-apk/*.apk
 
   build-windows:
     name: Compilar ejecutable de Windows
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ./ERP-POS-PRO
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -84,4 +64,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-release-app
-          path: build/windows/x64/runner/Release
+          path: ERP-POS-PRO/build/windows/x64/runner/Release
