@@ -28,8 +28,17 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
-      - name: Generar plataforma Android
-        run: flutter create . --platforms=android
+      - name: Parchear namespace de blue_thermal_printer
+        run: |
+          MANIFEST="/home/runner/.pub-cache/hosted/pub.dev/blue_thermal_printer-1.2.3/android/AndroidManifest.xml"
+          GRADLE="/home/runner/.pub-cache/hosted/pub.dev/blue_thermal_printer-1.2.3/android/build.gradle"
+          if [ -f "$MANIFEST" ] && [ -f "$GRADLE" ]; then
+            PKG=$(grep -oP 'package="\K[^"]+' "$MANIFEST")
+            echo "Namespace detectado: $PKG"
+            if ! grep -q "namespace" "$GRADLE"; then
+              sed -i "/android {/a \    namespace '$PKG'" "$GRADLE"
+            fi
+          fi
 
       - name: Construir APK Release
         run: flutter build apk --release
