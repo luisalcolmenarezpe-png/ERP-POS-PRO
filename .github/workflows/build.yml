@@ -28,16 +28,23 @@ jobs:
       - name: Instalar dependencias
         run: flutter pub get
 
-      - name: Parchear namespace de blue_thermal_printer
+      - name: Solucionar error de Namespace en librerías
         run: |
-          MANIFEST="/home/runner/.pub-cache/hosted/pub.dev/blue_thermal_printer-1.2.3/android/AndroidManifest.xml"
-          GRADLE="/home/runner/.pub-cache/hosted/pub.dev/blue_thermal_printer-1.2.3/android/build.gradle"
-          if [ -f "$MANIFEST" ] && [ -f "$GRADLE" ]; then
-            PKG=$(grep -oP 'package="\K[^"]+' "$MANIFEST")
-            echo "Namespace detectado: $PKG"
-            if ! grep -q "namespace" "$GRADLE"; then
-              sed -i "/android {/a \    namespace '$PKG'" "$GRADLE"
+          # Buscar el archivo build.gradle de la librería problemática
+          GRADLE_FILE=$(find /home/runner/.pub-cache -name "build.gradle" | grep "blue_thermal_printer" | head -n 1)
+          
+          if [ -f "$GRADLE_FILE" ]; then
+            echo "Archivo encontrado en: $GRADLE_FILE"
+            if ! grep -q "namespace" "$GRADLE_FILE"; then
+              echo "Aplicando parche de namespace..."
+              # Inyectar el namespace justo después de la línea 'android {'
+              sed -i "/android {/a \    namespace 'id.kakzaki.blue_thermal_printer'" "$GRADLE_FILE"
+              echo "Namespace inyectado correctamente."
+            else
+              echo "El namespace ya existe."
             fi
+          else
+            echo "No se encontró el archivo de la librería. Continuando..."
           fi
 
       - name: Construir APK Release
@@ -73,3 +80,4 @@ jobs:
         with:
           name: erp-windows-executable
           path: build/windows/x64/runner/Release/
+          
