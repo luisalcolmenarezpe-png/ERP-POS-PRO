@@ -1,4 +1,4 @@
-name: Build Apps
+name: Build ERP Apps
 
 on:
   push:
@@ -7,10 +7,10 @@ on:
 
 jobs:
   build-android:
-    name: Construir APK de Android
+    name: Compilar APK Android
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Java JDK
@@ -23,45 +23,44 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
-      - name: Install Dependencies
+      - name: Instalar dependencias
         run: flutter pub get
 
-      - name: Generar plataforma Android en la nube
+      - name: Generar plataforma Android
         run: flutter create . --platforms=android
 
-      - name: Build Release APK
-        run: flutter build apk --release --split-per-abi
+      - name: Construir APK Release
+        run: flutter build apk --release
 
-      - name: Upload Android Artifact
+      - name: Subir APK como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-apk
+          name: erp-android-apk
           path: build/app/outputs/flutter-apk/*.apk
 
   build-windows:
-    name: Compilar ejecutable de Windows
+    name: Compilar Ejecutable Windows
     runs-on: windows-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Flutter SDK
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true
 
-      - name: Install Dependencies
+      - name: Instalar dependencias
         run: flutter pub get
 
-      - name: Generar plataforma Windows en la nube
-        run: flutter create . --platforms=windows
-
-      - name: Build Windows Release
+      - name: Construir Windows Release
         run: flutter build windows --release
 
-      - name: Upload Windows Artifact
+      - name: Subir Ejecutable como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: windows-release-app
-          path: build/windows/x64/runner/Release
+          name: erp-windows-executable
+          path: build/windows/x64/runner/Release/
