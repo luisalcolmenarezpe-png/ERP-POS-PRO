@@ -1,7 +1,80 @@
-- name: Generar plataforma Android
-        run: flutter create . --platforms=android
+name: Build ERP Apps
 
-      - name: Usar AGP 7.4.2 para evitar errores de namespace
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Compilar APK Android
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Parchear automáticamente todas las librerías antiguas
         run: |
-          sed -i 's/com.android.tools.build:gradle:8\.[0-9]\.[0-9]/com.android.tools.build:gradle:7.4.2/g' android/build.gradle || true
-          sed -i 's/gradle-8\.[0-9]*-all.zip/gradle-7.5-all.zip/g' android/gradle/wrapper/gradle-wrapper.properties || true
+          echo "Buscando librerías que necesiten namespace..."
+          find /home/runner/.pub-cache -name "AndroidManifest.xml" | while read manifest; do
+            gradle_dir=$(dirname "$manifest")/../
+            gradle_file="$gradle_dir/build.gradle"
+            if [ -f "$gradle_file" ]; then
+              if ! grep -q "namespace" "$gradle_file"; then
+                pkg=$(grep -oP 'package="\K[^"]+' "$manifest" || true)
+                if [ -n "$pkg" ]; then
+                  echo "Inyectando namespace '$pkg' en $gradle_file"
+                  sed -i "/android {/a \    namespace '$pkg'" "$gradle_file"
+                fi
+              fi
+            fi
+          done
+
+      - name: Construir APK Release
+        run: flutter build apk --release
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: erp-android-apk
+          path: build/app/outputs/flutter-apk/*.apk
+
+  build-windows:
+    name: Compilar Ejecutable Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Construir Windows Release
+        run: flutter build windows --release
+
+      - name: Subir Ejecutable como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: erp-windows-executable
+          path: build/windows/x64/runner/Release/
